@@ -77,19 +77,19 @@ def calibrate(calibimgfiles, resultfile):
     print("cx = ",K[0][2])
     print("cy = ",K[1][2])
 
-    print("Estimated extrinsic parameters (rotation vectors and translation vectors)")
-    for i in range(len(rvecs)):
-        print(f"Image {i+1}:")
-        print("Rotation vector:\n", rvecs[i])
-        print("Translation vector:\n", tvecs[i])
-
     # save the results out to a file for later use
     calib = {}
-    calib["fx"] = K[0][0]
-    calib["fy"] = K[1][1]
-    calib["cx"] = K[0][2]
-    calib["cy"] = K[1][2]
+    calib["f"] = np.mean([K[0][0], K[1][1]])
+    calib["c"] = np.array([[K[0][2]], [K[1][2]]])
     calib["dist"] = dist
+    calib["C0"] = {
+        "R": rvecs[0].reshape(3, 1),
+        "t": tvecs[0].reshape(3, 1) 
+    }
+    calib["C1"] = {
+        "R": rvecs[-1].reshape(3, 1),
+        "t": tvecs[-1].reshape(3, 1) 
+    }
     fid = open(resultfile, "wb" ) 
     pickle.dump(calib,fid)
     fid.close()
