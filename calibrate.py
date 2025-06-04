@@ -59,7 +59,7 @@ def calibrate(calibimgfiles, resultfile):
             # Display image with the corners overlayed
             cv2.drawChessboardCorners(img, (8,6), corners, ret)
             cv2.imshow('img', img)
-            cv2.waitKey(500)
+            cv2.waitKey(50)
 
     cv2.destroyAllWindows()
 
