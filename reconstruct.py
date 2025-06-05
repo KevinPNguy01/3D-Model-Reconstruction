@@ -117,6 +117,7 @@ def reconstruct(img0_path, img1_path, C0, C1, M0, M1, camL, camR):
     # Now triangulate the points
 
     pts3 = triangulate(pts2L, camL, pts2R, camR)
+    pts3[1, :] *= -1
 
     img0 = plt.imread(img0_path)
     img1 = plt.imread(img1_path)

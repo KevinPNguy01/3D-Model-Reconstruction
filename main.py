@@ -17,7 +17,7 @@ def main():
     pts2L, pts2R, pts3, rgb = reconstruct("./david/grab_0/color_C0_01_u.png", "./david/grab_0/color_C1_01_u.png", C0, C1, M0, M1, camL, camR)
     visualize_points(pts3, rgb)
 
-    pts3, rgb, faces = generate_mesh(pts3, pts2L, rgb, [-100, 100, -100, -5, -100, 100], 10)
+    pts3, rgb, faces = generate_mesh(pts3, pts2L, rgb, [-100, 100, -100, 0, 100, 100], 10)
     visualize_mesh(pts3, rgb, faces)
 
 if __name__ == "__main__":

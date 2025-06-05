@@ -46,25 +46,26 @@ def decode_combined_code(folder, camera, code_threshold, object_threshold, displ
 
     if display:
         # display visualizaitons of the first scan
-        fig, ax = plt.subplots(2, 3, figsize=(15, 10))
-        ax[0, 0].imshow(horizontal_code)
-        ax[0, 0].set_title('Horizontal Code')
-        ax[0, 1].imshow(vertical_code)
-        ax[0, 1].set_title('Vertical Code')
-        ax[0, 2].imshow(combined_code)
-        ax[0, 2].set_title('Combined Code')
-        ax[1, 0].imshow(horizontal_mask)
-        ax[1, 0].set_title('Horizontal Mask')
-        ax[1, 1].imshow(vertical_mask)
-        ax[1, 1].set_title('Vertical Mask')
-        ax[1, 2].imshow(combined_mask)
-        ax[1, 2].set_title('Combined Mask')
+        fig, ax = plt.subplots(2, 4, figsize=(15, 10))
+        ax[0, 0].imshow(horizontal_mask)
+        ax[0, 0].set_title('Horizontal Mask')
+        ax[0, 1].imshow(vertical_mask)
+        ax[0, 1].set_title('Vertical Mask')
+        ax[0, 2].imshow(object_mask)
+        ax[0, 2].set_title('Object Mask')
+        ax[0, 3].imshow(combined_mask)
+        ax[0, 3].set_title('Combined Mask')
+        ax[1, 0].imshow(horizontal_code)
+        ax[1, 0].set_title('Horizontal Code')
+        ax[1, 1].imshow(vertical_code)
+        ax[1, 1].set_title('Vertical Code')
+        ax[1, 2].imshow(combined_code)
+        ax[1, 2].set_title('Combined Code')
+        ax[1, 3].imshow(masked_code)
+        ax[1, 3].set_title('Masked Combined Code')
+
         for axis in ax.flat:
             axis.axis('off')
-        plt.figure(figsize=(6, 6))
-        plt.imshow(masked_code)
-        plt.title('Masked Combined Code')
-        plt.axis('off')
         plt.show()
 
     return masked_code, combined_mask
