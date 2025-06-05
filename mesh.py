@@ -1,6 +1,43 @@
 from scipy.spatial import Delaunay
 import numpy as np
 
+def smooth_mesh(pts3, faces):
+    """
+    Smooth the mesh by averaging the positions of each vertex with its neighbors.
+
+    Parameters
+    ----------
+    pts3 : 2D numpy.array (dtype=float)
+        Coordinates of N points stored in a array of shape (3,N).
+
+    faces : 2D numpy.array (dtype=int)
+        Indices of the triangles in the mesh. Each row corresponds to a triangle defined by three vertex indices.
+
+    Returns
+    -------
+    pts3_smoothed : 2D numpy.array (dtype=float)
+        Smoothed coordinates of the points, same shape as input (3,N).
+
+    """
+
+    n = pts3.shape[1]
+    neighbors = [[] for _ in range(n)]
+
+    for face in faces:
+        for i in range(3):
+            for j in range(3):
+                if i != j:
+                    neighbors[face[i]].append(pts3[:, face[j]])
+
+    pts3_smoothed = np.zeros_like(pts3)
+    for i in range(n):
+        if neighbors[i]:
+            pts3_smoothed[:, i] = np.mean(neighbors[i], axis=0)
+        else:
+            pts3_smoothed[:, i] = pts3[:, i]
+
+    return pts3_smoothed
+
 def generate_mesh(pts3, pts2L, rgb, box_limits, tri_thresh):
     """
     Generate a mesh from 3D points using Delaunay triangulation and apply pruning based on bounding box limits and triangle edge length.
@@ -32,6 +69,8 @@ def generate_mesh(pts3, pts2L, rgb, box_limits, tri_thresh):
         Indices of the triangles in the mesh after pruning. Each row corresponds to a triangle defined by three vertex indices.
 
     """
+    print("Generating mesh...")
+
     #
     # bounding box pruning
     #
@@ -62,5 +101,9 @@ def generate_mesh(pts3, pts2L, rgb, box_limits, tri_thresh):
 
     tri_mask = np.apply_along_axis(valid_triangle, 1, tri.simplices)
     indices = tri.simplices[tri_mask]
+
+    print("Smoothing mesh...")
+    for _ in range(5):
+        pts3_pruned = smooth_mesh(pts3_pruned, indices)
 
     return pts3_pruned, rgb_pruned, indices

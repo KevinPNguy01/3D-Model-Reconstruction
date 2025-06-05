@@ -31,6 +31,8 @@ def decode_combined_code(folder, camera, code_threshold, object_threshold, displ
         Array indicating which pixels were correctly decoded and are part of the object mask.
     """
 
+    print(f"Decoding combined code for {camera} in folder {folder}...")
+
     # Compute gray code and mask in each direction
     horizontal_code, horizontal_mask = decode(folder, camera, 0, code_threshold)
     vertical_code, vertical_mask = decode(folder, camera, 20, code_threshold)
