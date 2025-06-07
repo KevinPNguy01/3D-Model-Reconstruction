@@ -16,6 +16,7 @@ import glob
 from camutils import Camera, makerotation
 import matplotlib.pyplot as plt
 import scipy.optimize
+import os
 
 def create_calibration(calibimgfiles, checkerboard_folder, resultfile):
     """
@@ -34,10 +35,16 @@ def create_calibration(calibimgfiles, checkerboard_folder, resultfile):
     """
     if not glob.glob(resultfile):
         print(f"Calibration file {resultfile} does not exist. Creating calibration...")
-        calibrate(calibimgfiles, checkerboard_folder, resultfile)
+        folder = os.path.dirname(resultfile)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        camL, camR = calibrate_cameras(calibimgfiles, checkerboard_folder, resultfile)
         print(f"Calibration complete. Result saved to {resultfile}.")
     else:
-        print(f"Calibration file {resultfile} already exists. Skipping calibration.")
+        print(f"Calibration file {resultfile} already exists. Loading from file...")
+        with open(resultfile, 'rb') as file:
+            camL, camR = pickle.load(file)
+    return camL, camR
 
 def calibrate_intrinsic(calibimgfiles, resultfile):
     """
@@ -161,7 +168,7 @@ def residuals(pts3,pts2,cam,params):
 
     return residual
 
-def calibratePose(pts3,pts2,cam,params_init):
+def calibrate_pose(pts3,pts2,cam,params_init):
     """
     Calibrate the provided camera by updating R,t so that pts3 projects
     as close as possible to pts2
@@ -249,8 +256,8 @@ def calibrate_extrinsic(folder, f, c):
     camL_params_init = np.array([0,0,0,0,0,-5])
     camR_params_init = np.array([0,0,0,0,0,-5])
 
-    camL = calibratePose(pts3,pts2L,camL,camL_params_init)
-    camR = calibratePose(pts3,pts2R,camR,camR_params_init)
+    camL = calibrate_pose(pts3,pts2L,camL,camL_params_init)
+    camR = calibrate_pose(pts3,pts2R,camR,camR_params_init)
 
     print("Estimated camera extrinsic parameters for left camera:")
     print("Rotation matrix R:")
@@ -267,7 +274,7 @@ def calibrate_extrinsic(folder, f, c):
 
     return camL, camR
 
-def calibrate(calibimgfiles, checkerboard_folder, resultfile):
+def calibrate_cameras(calibimgfiles, checkerboard_folder, resultfile):
     """
     Calibrate the cameras using a set of images of a checkerboard pattern.
     
@@ -282,6 +289,14 @@ def calibrate(calibimgfiles, checkerboard_folder, resultfile):
     resultfile : str
         File name to save the calibration results.
 
+    Returns
+    -------
+    camL : Camera
+        Camera object for the left camera with intrinsic and extrinsic parameters.
+
+    camR : Camera
+        Camera object for the right camera with intrinsic and extrinsic parameters.
+
     """
     f, c = calibrate_intrinsic(calibimgfiles, resultfile)
 
@@ -290,3 +305,5 @@ def calibrate(calibimgfiles, checkerboard_folder, resultfile):
     # Save the calibration results
     with open(resultfile, 'wb') as file:
         pickle.dump((camL, camR), file)
+
+    return camL, camR

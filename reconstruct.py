@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import glob
+import os
+import pickle
 
 def triangulate(pts2L,camL,pts2R,camR):
     """
@@ -51,18 +54,15 @@ def triangulate(pts2L,camL,pts2R,camR):
 
     return pts3
 
-def reconstruct(img0_path, img1_path, C0, C1, M0, M1, camL, camR):
+def reconstruct(folder, C0, C1, M0, M1, camL, camR, resultfile):
     """
     Reconstruct the 3D points from the codes C0 and C1 for the left and right cameras.
 
 
     Parameters
     ----------
-    img0_path : str
-        Path to the left camera image
-
-    img1_path : str
-        Path to the right camera image
+    folder : str
+        The folder where the images are stored, used to read the images for RGB values.
 
     C0 : 2D numpy.array (dtype=float)
         The codes for the left camera, with shape (H,W)
@@ -82,6 +82,8 @@ def reconstruct(img0_path, img1_path, C0, C1, M0, M1, camL, camR):
     camR : Camera
         The right camera object containing calibration data
 
+    resultfile : str
+        The path to the file where the results will be saved.
 
     Returns
     -------
@@ -94,7 +96,17 @@ def reconstruct(img0_path, img1_path, C0, C1, M0, M1, camL, camR):
     pts3 : 2D numpy.array (dtype=float)
         The 3D coordinates of the matched points in the global coordinate system, shape (3,N)
     """
+
+    # If the result file already exists, load it
+    if glob.glob(resultfile):
+        print(f"Reconstruction already exists at {resultfile}. Loading from file...")
+        with open(resultfile, 'rb') as f:
+            pts2L, pts2R, pts3, rgb_values = pickle.load(f)
+        return pts2L, pts2R, pts3, rgb_values
     
+    # Otherwise, reconstruct the 3D points from the codes, masks, and cameras
+    print(f"Reconstructing 3D points from codes in {folder}...")
+
     # Find the indices of pixels in the left and right code image that 
     # have matching codes. If there are multiple matches, just
     # choose one arbitrarily.
@@ -104,7 +116,6 @@ def reconstruct(img0_path, img1_path, C0, C1, M0, M1, camL, camR):
     # Suppose you have computed arrays of indices matchL and matchR so that 
     # CL[matchL[i]] == CR[matchR[i]] for all i.  The code below gives one approach
     # to generating the corresponding pixel coordinates for the matched pixels.
-
     h,w = C0.shape    
     xx,yy = np.meshgrid(range(w),range(h))
     xxL = xx[M0]
@@ -113,15 +124,21 @@ def reconstruct(img0_path, img1_path, C0, C1, M0, M1, camL, camR):
     yyR = yy[M1]
     pts2L = np.vstack((xxL[matchL], yyL[matchL]))
     pts2R = np.vstack((xxR[matchR], yyR[matchR]))
- 
-    # Now triangulate the points
 
+    # Now triangulate the points
     pts3 = triangulate(pts2L, camL, pts2R, camR)
     pts3[1, :] *= -1
 
-    img0 = plt.imread(img0_path)
-    img1 = plt.imread(img1_path)
+    # Read the RGB values from the images at the matched pixel coordinates
+    img = plt.imread(f"{folder}/color_C0_01_u.png")
+    rgb_values = img[pts2L[1], pts2L[0]].T
 
-    rgb_values = img0[pts2L[1], pts2L[0]].T
-    
+    # Save the results to rhe result file
+    folder = os.path.dirname(resultfile)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    with open(resultfile, 'wb') as f:
+        pickle.dump((pts2L, pts2R, pts3, rgb_values), f)
+    print(f"Reconstruction complete. Results saved to {resultfile}.")
+
     return pts2L, pts2R, pts3, rgb_values

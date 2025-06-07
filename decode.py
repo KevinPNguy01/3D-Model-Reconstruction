@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import glob
+import os
+import pickle
 
 def decode_combined_code(folder, camera, code_threshold, object_threshold, display=False):
     """
@@ -31,11 +34,9 @@ def decode_combined_code(folder, camera, code_threshold, object_threshold, displ
         Array indicating which pixels were correctly decoded and are part of the object mask.
     """
 
-    print(f"Decoding combined code for {camera} in folder {folder}...")
-
     # Compute gray code and mask in each direction
-    horizontal_code, horizontal_mask = decode(folder, camera, 0, code_threshold)
-    vertical_code, vertical_mask = decode(folder, camera, 20, code_threshold)
+    horizontal_code, horizontal_mask = decode_code(folder, camera, 0, code_threshold)
+    vertical_code, vertical_mask = decode_code(folder, camera, 20, code_threshold)
 
     # Compute object mask
     object_mask = compute_object_mask(folder, camera, object_threshold)
@@ -72,6 +73,62 @@ def decode_combined_code(folder, camera, code_threshold, object_threshold, displ
 
     return masked_code, combined_mask
 
+def decode(folder, code_threshold, object_threshold, resultfile, display=False):
+    """
+    Decode the gray code from a sequence of images for both cameras and compute the object mask.
+
+    Parameters
+    ----------
+    folder : str
+        Folder where the images are stored.
+
+    code_threshold : float
+        Threshold to determine if a pixel's gray code is decodeable.
+
+    object_threshold : float
+        Threshold to determine if a pixel is part of the object mask.
+
+    resultfile : str
+        File name to save the decoded results.
+
+    Returns
+    -------
+    C0 : 2D numpy.array (dtype=float)
+        Combined gray code for camera C0.
+
+    M0 : 2D numpy.array (dtype=bool)
+        Mask indicating which pixels were correctly decoded and are part of the object mask for camera C0.
+
+    C1 : 2D numpy.array (dtype=float)
+        Combined gray code for camera C1.
+
+    M1 : 2D numpy.array (dtype=bool)
+        Mask indicating which pixels were correctly decoded and are part of the object mask for camera C1.
+
+    """
+
+    # If the result file already exists, load it
+    if glob.glob(resultfile):
+        print(f"Decoded gray code already exists at {resultfile}. Loading from file...")
+        with open(resultfile, 'rb') as f:
+            C0, M0, C1, M1 = pickle.load(f)
+        return C0, M0, C1, M1
+    
+    # Otherwise, decode the gray code from the images
+    print(f"Decoding gray code from images in {folder}...")
+    C0, M0 = decode_combined_code(folder, "C0", code_threshold, object_threshold, display=display)
+    C1, M1 = decode_combined_code(folder, "C1", code_threshold, object_threshold, display=display)
+
+    # Save the results to the result file
+    folder = os.path.dirname(resultfile)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    with open(resultfile, 'wb') as f:
+        pickle.dump((C0, M0, C1, M1), f)
+    print(f"Decoded gray code saved to {resultfile}.")
+
+    return C0, M0, C1, M1
+
 def gray_to_binary(gray: int) -> int:
     """
     Convert a 10-bit gray code to binary.
@@ -94,7 +151,7 @@ def gray_to_binary(gray: int) -> int:
         binary ^= mask
     return binary
 
-def decode(folder, camera, start, threshold):
+def decode_code(folder, camera, start, threshold):
    """
    Given a sequence of 20 images of a scene showing projected 10 bit gray code, 
    decode the binary sequence into a decimal value in (0,1023) for each pixel.

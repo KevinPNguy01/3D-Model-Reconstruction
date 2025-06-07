@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import trimesh
+import numpy as np
 
 def visualize_points(pts3, rgb):
     """
@@ -43,7 +44,20 @@ def visualize_points(pts3, rgb):
     ax.set_zlabel('Y')
     ax.scatter(pts3[0,:],pts3[2,:],pts3[1,:],s=1, c=rgb.T)
     ax.set_box_aspect([1,1,1])
-    plt.show()
+    xlim = [np.min(pts3[0,:]), np.max(pts3[0,:])]
+    ylim = [np.min(pts3[2,:]), np.max(pts3[2,:])]
+    zlim = [np.min(pts3[1,:]), np.max(pts3[1,:])]
+    max_range = max(
+        xlim[1] - xlim[0],
+        ylim[1] - ylim[0],
+        zlim[1] - zlim[0]
+    )
+    mid_x = np.mean(xlim)
+    mid_y = np.mean(ylim)
+    mid_z = np.mean(zlim)
+    ax.set_xlim(mid_x - max_range/2, mid_x + max_range/2)
+    ax.set_ylim(mid_y - max_range/2, mid_y + max_range/2)
+    ax.set_zlim(mid_z - max_range/2, mid_z + max_range/2)
 
 def visualize_mesh(pts3, rgb, faces):
     """
