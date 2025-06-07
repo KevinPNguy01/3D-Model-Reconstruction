@@ -25,7 +25,7 @@ def main():
         triangles.append(faces)
 
     rotations = [np.eye(3)]
-    translations = [np.zeros((3, 1))]
+    translations = [np.zeros((3,))]
     for i in range(4):
         j = i + 1
         R, t = align(
@@ -35,6 +35,13 @@ def main():
         )
         rotations.append(R)
         translations.append(t)
+        
+    R = np.eye(3)
+    t = np.zeros((3,))
+    for i in range(5):
+        t = R @ translations[i] + t
+        R = rotations[i] @ R
+        writeply(R @ pts[i] + t[:, np.newaxis], colors[i], triangles[i], f"./meshes/david_{i}.ply")
 
 if __name__ == "__main__":
     main()

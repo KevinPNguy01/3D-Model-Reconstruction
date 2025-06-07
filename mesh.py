@@ -25,6 +25,10 @@ def writeply(X,color,tri,filename):
 
     """
 
+    folder = os.path.dirname(filename)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+        
     f = open(filename,"w")
     f.write('ply\n')
     f.write('format ascii 1.0\n')
