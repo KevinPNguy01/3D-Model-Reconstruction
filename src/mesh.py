@@ -1,8 +1,8 @@
 from scipy.spatial import Delaunay
 import numpy as np
+import pickle
 import glob
 import os
-import pickle
 
 def writeply(X,color,tri,filename):
     """
@@ -52,6 +52,7 @@ def writeply(X,color,tri,filename):
         f.write('3 %d %d %d\n' % (tri[t,1],tri[t,0],tri[t,2]))
 
     f.close()
+    print(f"Mesh saved to {filename}.")
 
 def smooth_mesh(pts3, indices):
     """

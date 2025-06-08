@@ -1,8 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pickle
 import glob
 import os
-import pickle
 
 def decode_combined_code(folder, camera, code_threshold, object_threshold, display=False):
     """

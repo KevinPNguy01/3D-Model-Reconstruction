@@ -1,21 +1,11 @@
-#
-# To run:
-#
-# Install opencv modules in Anaconda environment:
-#
-#   conda install opencv
-#
-# Run calibrate.py from the commandline:
-#
-#   python calibrate.py
 
-import pickle
-import numpy as np
-import cv2
-import glob
-from camutils import Camera, makerotation
+from src.camutils import Camera, makerotation
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.optimize
+import pickle
+import glob
+import cv2
 import os
 
 def create_calibration(calibimgfiles, checkerboard_folder, resultfile):
@@ -46,7 +36,7 @@ def create_calibration(calibimgfiles, checkerboard_folder, resultfile):
             camL, camR = pickle.load(file)
     return camL, camR
 
-def calibrate_intrinsic(calibimgfiles, resultfile):
+def calibrate_intrinsic(calibimgfiles):
     """
     Calibrate a camera using a set of images of a checkerboard pattern. The checkerboard should have 7 rows and 9 columns of squares.
     
@@ -54,9 +44,6 @@ def calibrate_intrinsic(calibimgfiles, resultfile):
     ----------
     calibimgfiles : str
         Path to the calibration images (glob pattern).
-        
-    resultfile : str
-        File name to save the calibration results.
 
     Returns
     -------
@@ -125,18 +112,6 @@ def calibrate_intrinsic(calibimgfiles, resultfile):
     c =  np.array([[K[0][2]], [K[1][2]]])
 
     return f, c
-    #
-    # optionally go through and remove radial distortion from a set of images
-    #
-    #images = glob.glob(calibimgfiles)
-    #for idx, fname in enumerate(images):
-    #    img = cv2.imread(fname)
-    #    img_size = (img.shape[1], img.shape[0])
-    #
-    #    dst = cv2.undistort(img, K, dist, None, K)
-    #    udfname = fname+'undistort.jpg'
-    #    cv2.imwrite(udfname,dst)
-    #
 
 def residuals(pts3,pts2,cam,params):
     """
@@ -298,7 +273,7 @@ def calibrate_cameras(calibimgfiles, checkerboard_folder, resultfile):
         Camera object for the right camera with intrinsic and extrinsic parameters.
 
     """
-    f, c = calibrate_intrinsic(calibimgfiles, resultfile)
+    f, c = calibrate_intrinsic(calibimgfiles)
 
     camL, camR = calibrate_extrinsic(checkerboard_folder, f, c)
 
