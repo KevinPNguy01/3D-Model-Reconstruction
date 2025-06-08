@@ -1,4 +1,4 @@
-from src import create_calibration, decode, reconstruct, mesh, writeply, align
+from src import calibrate, decode, reconstruct, mesh, writeply, align
 import numpy as np
 import sys
 
@@ -17,7 +17,7 @@ def main(name, n):
     """
 
     # Calibrate the cameras
-    camL, camR = create_calibration("./scans/calib/*.png", f"./scans/{name}/grab_0", f"./pickles/calibration/{name}.pickle")
+    camL, camR = calibrate("./scans/calib/*.png", f"./scans/{name}/grab_0", f"./pickles/calibration/{name}.pickle")
 
     # Generate partial meshes from each of the scans
     pts = []
