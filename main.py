@@ -56,9 +56,15 @@ def main(name, n):
 
 if __name__ == "__main__":
     # By default, run the main function with 'david' and 5 scans
-    if len(sys.argv) != 3:
+    if len(sys.argv) == 1:
         main("david", 5)
         exit(0)
+
+    # Check if command line arguments are provided
+    if len(sys.argv) != 3:
+        print("Usage: python main.py <name> <n>")
+        print("Example: python main.py david 5")
+        exit(1)
 
     # If command line arguments are provided, use them
     name = sys.argv[1]
