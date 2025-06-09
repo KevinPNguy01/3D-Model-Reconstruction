@@ -174,8 +174,8 @@ def mesh(pts3, pts2L, pts2R, rgb, box_limits, tri_thresh, resultfile):
     tri_mask = np.apply_along_axis(valid_triangle, 1, tri.simplices)
     indices = tri.simplices[tri_mask]
 
-    # Smooth the mesh by averaging the positions of each vertex with its neighbors 5 times
-    for _ in range(5):
+    # Smooth the mesh by averaging the positions of each vertex with its neighbors 3 times
+    for _ in range(3):
         pts3_pruned = smooth_mesh(pts3_pruned, indices)
 
     # Save the results to the result file

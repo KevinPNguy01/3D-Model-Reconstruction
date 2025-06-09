@@ -27,7 +27,7 @@ def main(name, n):
     for i in range(n):
         C0, M0, C1, M1 = decode(f"./scans/{name}/grab_{i}", 0.005, 0.15, f"./pickles/graycode/{name}_{i}.pickle")
         pts2L, pts2R, pts3, rgb = reconstruct(f"./scans/{name}/grab_{i}", C0, C1, M0, M1, camL, camR, f"./pickles/reconstruction/{name}_{i}.pickle")
-        pts3, pts2L, pts2R, rgb, faces = mesh(pts3, pts2L, pts2R, rgb, [-100, 100, 0.25, 100, -100, 100], 1, f"./pickles/mesh/{name}_{i}.pickle")
+        pts3, pts2L, pts2R, rgb, faces = mesh(pts3, pts2L, pts2R, rgb, [-100, 100, 0.25, 100, -100, 100], 2.5, f"./pickles/mesh/{name}_{i}.pickle")
         pts.append(pts3)
         ptsL.append(pts2L)
         colors.append(rgb)
