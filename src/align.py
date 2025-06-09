@@ -4,6 +4,92 @@ import glob
 import os
 import pickle
 
+def align(pts3_1, pts3_2, ptsL1, ptsL2, img1_path, img2_path, resultfile):
+    """
+    Align two sets of 3D points based on selected corresponding points in two images.
+
+    Parameters
+    ----------
+    pts3_1 : 2D numpy array
+        3D points from the first image, shape (3, N).
+
+    pts3_2 : 2D numpy array
+        3D points from the second image, shape (3, N).
+
+    ptsL1 : 2D numpy array
+        2D points in the left camera for the first image, shape (2, N).
+
+    ptsL2 : 2D numpy array
+        2D points in the left camera for the second image, shape (2, N).
+
+    img1_path : str
+        Path to the first image.
+
+    img2_path : str
+        Path to the second image.
+
+    resultfile : str
+        Path to the file where the results will be saved.
+
+    Returns
+    -------
+    R : 2D numpy array
+        Rotation matrix aligning the points from the second image to the first image.
+
+    t : 1D numpy array
+        Translation vector aligning the points from the second image to the first image.
+
+    """
+    # If the result file already exists, load it
+    if glob.glob(resultfile):
+        print(f"Loading alignment results from {resultfile}...")
+        with open(resultfile, 'rb') as f:
+            R, t = pickle.load(f)
+        return R, t
+
+    # Otherwise, perform the alignment
+    print(f"Aligning scans {img1_path} and {img2_path}...")
+    pts1, pts2 = select_points(img1_path, img2_path)
+
+    # Calculate the nearest points in ptsL1 and ptsL2 for each selected point
+    nearest_ptsL1_indices = []
+    nearest_ptsL2_indices = []
+    for index in range(len(pts1)):
+        pt1, pt2 = pts1[index], pts2[index]
+        nearest_ptsL1_indices.append(0)
+        nearest_ptsL2_indices.append(0)
+
+        for k in range(len(ptsL1[0])):
+            if np.linalg.norm(ptsL1[:, k] - pt1) < np.linalg.norm(ptsL1[:, nearest_ptsL1_indices[-1]] - pt1):
+                nearest_ptsL1_indices[-1] = k
+        for k in range(len(ptsL2[0])):
+            if np.linalg.norm(ptsL2[:, k] - pt2) < np.linalg.norm(ptsL2[:, nearest_ptsL2_indices[-1]] - pt2):
+                nearest_ptsL2_indices[-1] = k
+
+    # Select the corresponding 3D points based on the nearest points to the selected points
+    nearest_pts3_1 = pts3_1[:, nearest_ptsL1_indices]
+    nearest_pts3_2 = pts3_2[:, nearest_ptsL2_indices]
+
+    # Use singular value decomposition to find the rotation and translation
+    m1 = np.mean(nearest_pts3_1, axis=1)
+    m2 = np.mean(nearest_pts3_2, axis=1)
+    X1c = nearest_pts3_1 - m1[:, np.newaxis]
+    X2c = nearest_pts3_2 - m2[:, np.newaxis]
+    H = X1c @ X2c.T
+    U, S, V = np.linalg.svd(H)
+    R = U @ V
+    t = m1 - R @ m2
+
+    # Save the results to the result file
+    folder = os.path.dirname(resultfile)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    with open(resultfile, 'wb') as f:
+        pickle.dump((R, t), f)
+    print(f"Alignment complete. Results saved to {resultfile}.")
+
+    return R, t
+
 def select_points(img1_path, img2_path):
     """
     Have the user click two corresponding points in two images.
@@ -64,83 +150,3 @@ def select_points(img1_path, img2_path):
         raise ValueError("Please select at least two corresponding points in both images.")
 
     return points1, points2
-
-def align(pts3_1, pts3_2, ptsL1, ptsL2, img1_path, img2_path, resultfile):
-    """
-    Align two sets of 3D points based on selected corresponding points in two images.
-
-    Parameters
-    ----------
-    pts3_1 : 2D numpy array
-        3D points from the first image, shape (3, N).
-
-    pts3_2 : 2D numpy array
-        3D points from the second image, shape (3, N).
-
-    ptsL1 : 2D numpy array
-        2D points in the left camera for the first image, shape (2, N).
-
-    ptsL2 : 2D numpy array
-        2D points in the left camera for the second image, shape (2, N).
-
-    img1_path : str
-        Path to the first image.
-
-    img2_path : str
-        Path to the second image.
-
-    resultfile : str
-        Path to the file where the results will be saved.
-
-    Returns
-    -------
-    R : 2D numpy array
-        Rotation matrix aligning the points from the second image to the first image.
-
-    t : 1D numpy array
-        Translation vector aligning the points from the second image to the first image.
-
-    """
-
-    if glob.glob(resultfile):
-        print(f"Loading alignment results from {resultfile}...")
-        with open(resultfile, 'rb') as f:
-            R, t = pickle.load(f)
-        return R, t
-
-    pts1, pts2 = select_points(img1_path, img2_path)
-
-    nearest_ptsL1_indices = []
-    nearest_ptsL2_indices = []
-    for index in range(len(pts1)):
-        pt1, pt2 = pts1[index], pts2[index]
-        nearest_ptsL1_indices.append(0)
-        nearest_ptsL2_indices.append(0)
-
-        for k in range(len(ptsL1[0])):
-            if np.linalg.norm(ptsL1[:, k] - pt1) < np.linalg.norm(ptsL1[:, nearest_ptsL1_indices[-1]] - pt1):
-                nearest_ptsL1_indices[-1] = k
-        for k in range(len(ptsL2[0])):
-            if np.linalg.norm(ptsL2[:, k] - pt2) < np.linalg.norm(ptsL2[:, nearest_ptsL2_indices[-1]] - pt2):
-                nearest_ptsL2_indices[-1] = k
-
-    nearest_pts3_1 = pts3_1[:, nearest_ptsL1_indices]
-    nearest_pts3_2 = pts3_2[:, nearest_ptsL2_indices]
-
-    m1 = np.mean(nearest_pts3_1, axis=1)
-    m2 = np.mean(nearest_pts3_2, axis=1)
-    X1c = nearest_pts3_1 - m1[:, np.newaxis]
-    X2c = nearest_pts3_2 - m2[:, np.newaxis]
-    H = X1c @ X2c.T
-    U, S, Vt = np.linalg.svd(H)
-    R = Vt.T @ U.T
-    R = R.T
-    t = m1 - R @ m2
-
-    folder = os.path.dirname(resultfile)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    with open(resultfile, 'wb') as f:
-        pickle.dump((R, t), f)
-
-    return R, t

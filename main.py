@@ -61,10 +61,6 @@ if __name__ == "__main__":
         exit(0)
 
     # If command line arguments are provided, use them
-    try:
-        name = sys.argv[1]
-        n = int(sys.argv[2])
-        main(name, n)
-    except ValueError:
-        print("Usage: python main.py <name> <number_of_scans>")
-        print("Example: python main.py david 5")
+    name = sys.argv[1]
+    n = int(sys.argv[2])
+    main(name, n)
