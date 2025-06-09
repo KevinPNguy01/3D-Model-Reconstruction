@@ -1,77 +1,9 @@
+from src.visualize import visualize_graycode
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import glob
 import os
-
-def decode_combined_code(folder, camera, code_threshold, object_threshold, display=False):
-    """
-    Computed a combined and masked gray code from a sequence of images.
-
-    Parameters
-    ----------
-    folder : str
-        Folder where the images are stored.
-
-    camera : str
-        Either 'C0' or 'C1' depending on the camera used.
-
-    code_threshold : float
-        Threshold to determine if a pixel's gray code is decodeable.
-
-    object_threshold : float
-        Threshold to determine if a pixel is part of the object mask.
-
-    display : bool, optional
-        If True, displays visualizations of the decoded gray code and masks.
-
-    Returns
-    -------
-    masked_code : 2D numpy.array (dtype=float)
-        Array containing the combined gray code values for each pixel, masked by the object.
-
-    combined_mask : 2D numpy.array (dtype=bool)
-        Array indicating which pixels were correctly decoded and are part of the object mask.
-    """
-
-    # Compute gray code and mask in each direction
-    horizontal_code, horizontal_mask = decode_code(folder, camera, 0, code_threshold)
-    vertical_code, vertical_mask = decode_code(folder, camera, 20, code_threshold)
-
-    # Compute object mask
-    object_mask = compute_object_mask(folder, camera, object_threshold)
-    combined_mask = horizontal_mask & vertical_mask & object_mask
-
-    # Combine horizontal and vertical codes and mask
-    combined_code = 1024 * horizontal_code + vertical_code
-    masked_code = np.zeros_like(combined_code, dtype=float)
-    masked_code[combined_mask] = combined_code[combined_mask]
-
-    if display:
-        # display visualizaitons of the first scan
-        fig, ax = plt.subplots(2, 4, figsize=(15, 10))
-        ax[0, 0].imshow(horizontal_mask)
-        ax[0, 0].set_title('Horizontal Mask')
-        ax[0, 1].imshow(vertical_mask)
-        ax[0, 1].set_title('Vertical Mask')
-        ax[0, 2].imshow(object_mask)
-        ax[0, 2].set_title('Object Mask')
-        ax[0, 3].imshow(combined_mask)
-        ax[0, 3].set_title('Combined Mask')
-        ax[1, 0].imshow(horizontal_code)
-        ax[1, 0].set_title('Horizontal Code')
-        ax[1, 1].imshow(vertical_code)
-        ax[1, 1].set_title('Vertical Code')
-        ax[1, 2].imshow(combined_code)
-        ax[1, 2].set_title('Combined Code')
-        ax[1, 3].imshow(masked_code)
-        ax[1, 3].set_title('Masked Combined Code')
-
-        for axis in ax.flat:
-            axis.axis('off')
-        plt.show()
-
-    return masked_code, combined_mask
 
 def decode(folder, code_threshold, object_threshold, resultfile, display=False):
     """
@@ -129,27 +61,56 @@ def decode(folder, code_threshold, object_threshold, resultfile, display=False):
 
     return C0, M0, C1, M1
 
-def gray_to_binary(gray: int) -> int:
+def decode_combined_code(folder, camera, code_threshold, object_threshold, display=False):
     """
-    Convert a 10-bit gray code to binary.
+    Computed a combined and masked gray code from a sequence of images.
 
     Parameters
     ----------
-    gray : int
-        The gray code value to convert.
+    folder : str
+        Folder where the images are stored.
+
+    camera : str
+        Either 'C0' or 'C1' depending on the camera used.
+
+    code_threshold : float
+        Threshold to determine if a pixel's gray code is decodeable.
+
+    object_threshold : float
+        Threshold to determine if a pixel is part of the object mask.
+
+    display : bool, optional
+        If True, displays visualizations of the decoded gray code and masks.
 
     Returns
     -------
-    int
-        The corresponding binary value.
+    masked_code : 2D numpy.array (dtype=float)
+        Array containing the combined gray code values for each pixel, masked by the object.
+
+    combined_mask : 2D numpy.array (dtype=bool)
+        Array indicating which pixels were correctly decoded and are part of the object mask.
     """
 
-    binary = gray
-    mask = gray
-    while mask != 0:
-        mask >>= 1
-        binary ^= mask
-    return binary
+    # Compute gray code and mask in each direction
+    horizontal_code, horizontal_mask = decode_code(folder, camera, 0, code_threshold)
+    vertical_code, vertical_mask = decode_code(folder, camera, 20, code_threshold)
+
+    # Compute object mask
+    object_mask = compute_object_mask(folder, camera, object_threshold)
+    combined_mask = horizontal_mask & vertical_mask & object_mask
+
+    # Combine horizontal and vertical codes and mask
+    combined_code = 1024 * horizontal_code + vertical_code
+    masked_code = np.zeros_like(combined_code, dtype=float)
+    masked_code[combined_mask] = combined_code[combined_mask]
+
+    if display:
+        visualize_graycode(
+            horizontal_mask, vertical_mask, object_mask, combined_mask,
+            horizontal_code, vertical_code, combined_code, masked_code
+        )
+
+    return masked_code, combined_mask
 
 def decode_code(folder, camera, start, threshold):
    """
@@ -183,16 +144,16 @@ def decode_code(folder, camera, start, threshold):
    
    """
    
-   # we will assume a 10 bit code
+   # We will assume a 10 bit code
    nbits = 10
    
-   # don't forget to convert images to grayscale / float after loading them in
+   # Load images and convert to grayscale if necessary
    images = []
    for i in range(20):
-      img = plt.imread(f"{folder}/frame_{camera}_{start+i:02d}_u.png")
-      if img.ndim == 3:
-         img = np.mean(img,axis=2)
-      images.append(img)
+        img = plt.imread(f"{folder}/frame_{camera}_{start+i:02d}_u.png")
+        if img.ndim == 3:
+            img = np.mean(img,axis=2)
+        images.append(img)
 
    threshold_mask = np.ones_like(images[0],dtype=bool)
    code = np.zeros_like(images[0],dtype=float)
@@ -200,20 +161,42 @@ def decode_code(folder, camera, start, threshold):
    # 10 binary images
    binary_images = np.zeros((nbits,images[0].shape[0],images[0].shape[1]),dtype=float)
    for i in range(nbits):
-      # get the ith image
+      # Get the ith image
       binary_images[i] = images[i*2] - images[i*2+1]
-      # update the mask
+      # Update the mask
       threshold_mask[np.abs(binary_images[i]) < threshold] = False
-      # threshold it
+      # Threshold it
       binary_images[i][binary_images[i] < 0] = 0
       binary_images[i][binary_images[i] > 0] = 1
-      
-   # now we have 10 binary images, we need to convert them to a decimal value
+
+   # Now we have 10 binary images, we need to convert them to a single "decimal" image
    for i in range(nbits):
       code += binary_images[i] * (2**(nbits-i-1))
    code = np.vectorize(gray_to_binary)(code.astype(int))
         
    return code, threshold_mask
+
+def gray_to_binary(gray: int) -> int:
+    """
+    Convert a gray code to binary.
+
+    Parameters
+    ----------
+    gray : int
+        The gray code value to convert.
+
+    Returns
+    -------
+    int
+        The corresponding binary value.
+    """
+
+    binary = gray
+    mask = gray
+    while mask != 0:
+        mask >>= 1
+        binary ^= mask
+    return binary
 
 def compute_object_mask(folder, camera, threshold):
    """

@@ -2,6 +2,62 @@ import matplotlib.pyplot as plt
 import trimesh
 import numpy as np
 
+def visualize_graycode(horizontal_mask, vertical_mask, object_mask, combined_mask,
+                       horizontal_code, vertical_code, combined_code, masked_code):
+    """
+    Visualize the gray code and masks for horizontal and vertical scans.
+
+    Parameters
+    ----------
+    horizontal_mask : 2D numpy.array (dtype=bool)
+        Mask for horizontal scan.
+
+    vertical_mask : 2D numpy.array (dtype=bool)
+        Mask for vertical scan.
+
+    object_mask : 2D numpy.array (dtype=bool)
+        Mask for the object.
+
+    combined_mask : 2D numpy.array (dtype=bool)
+        Combined mask of horizontal, vertical, and object masks.
+
+    horizontal_code : 2D numpy.array (dtype=float)
+        Gray code values for horizontal scan.
+
+    vertical_code : 2D numpy.array (dtype=float)
+        Gray code values for vertical scan.
+
+    combined_code : 2D numpy.array (dtype=float)
+        Combined gray code values from horizontal and vertical scans.
+
+    masked_code : 2D numpy.array (dtype=float)
+        Combined gray code values masked by the combined mask.
+
+    """
+
+    fig, ax = plt.subplots(2, 4, figsize=(15, 10))
+    ax[0, 0].imshow(horizontal_mask)
+    ax[0, 0].set_title('Horizontal Mask')
+    ax[0, 1].imshow(vertical_mask)
+    ax[0, 1].set_title('Vertical Mask')
+    ax[0, 2].imshow(object_mask)
+    ax[0, 2].set_title('Object Mask')
+    ax[0, 3].imshow(combined_mask)
+    ax[0, 3].set_title('Combined Mask')
+    ax[1, 0].imshow(horizontal_code)
+    ax[1, 0].set_title('Horizontal Code')
+    ax[1, 1].imshow(vertical_code)
+    ax[1, 1].set_title('Vertical Code')
+    ax[1, 2].imshow(combined_code)
+    ax[1, 2].set_title('Combined Code')
+    ax[1, 3].imshow(masked_code)
+    ax[1, 3].set_title('Masked Combined Code')
+
+    for axis in ax.flat:
+        axis.axis('off')
+    plt.tight_layout()
+    plt.show()
+
 def visualize_points(pts3, rgb):
     """
     Visualize 3D points in XY, XZ, ZY, and 3D views using matplotlib.
@@ -58,6 +114,8 @@ def visualize_points(pts3, rgb):
     ax.set_xlim(mid_x - max_range/2, mid_x + max_range/2)
     ax.set_ylim(mid_y - max_range/2, mid_y + max_range/2)
     ax.set_zlim(mid_z - max_range/2, mid_z + max_range/2)
+    plt.tight_layout()
+    plt.show()
 
 def visualize_mesh(pts3, rgb, faces):
     """
